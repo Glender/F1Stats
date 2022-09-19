@@ -29,15 +29,24 @@ find_qualifying_urls <- function(main_url, base_url = "https://www.formula1.com"
 
 
 #' @title Extract the year from a url like 'https://www.formula1.com/en/results.html/2022/races/'
-#' @param url Character.
+#' @param driver_name Character.
 #' @return
 #' @export
-#'
-#' @examples
 # Get the capital name (e.g. 'Max Verstappen VER' becomes 'VER' )
 get_capital_name <- function(driver_name){
   return(base::sub(".* ", "", driver_name))
 }
+
+
+#' @title Extract the year from a url like 'https://www.formula1.com/en/results.html/2022/races/'
+#' @param url Character.
+#'
+#' @return Character. Year.
+#' @export
+get_year_from_url <- function(url) {
+  return(stringr::str_extract(url, "\\d{4}"))
+}
+
 
 
 #' @title Extract the circuit country from a url.
