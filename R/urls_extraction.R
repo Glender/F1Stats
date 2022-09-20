@@ -1,4 +1,36 @@
-#' Scrape all urls that link to qualifying statistics.
+#' @title Given a year find the race resuslts.html
+#' @param year int. The year you want to scrape
+#' @return Character. A url.
+#' @export
+#'
+#' @examples
+#' # get_race_results_url(2019)
+get_race_results_url <- function(year)
+{
+  # Given a year, retrieve the race-results.html file.
+  url <- sprintf("https://www.formula1.com/en/results.html/%s/races.html", year)
+
+  html_doc <- rvest::read_html(url)
+  base_url <- "https://www.formula1.com"
+
+  # This selector is suitable to scrape every
+  # conceivable year on the https://www.formula1.com/en/results.html website.
+  css_selector <-
+    "body > div.site-wrapper > main > article > div > div.ResultArchiveContainer>
+     div.resultsarchive-filter-container > div:nth-child(3) > ul > li:nth-child(2) > a"
+
+  part_url <- html_doc %>%
+    rvest::html_node(css = css_selector) %>%
+    rvest::html_attr("href")
+
+  # On this url, you can find all relevant
+  # urls with statistics from the stated year.
+  race_results <- paste(base_url, part_url, sep = "")
+  return(race_results)
+}
+
+
+#' @title Scrape all urls that link to qualifying statistics.
 #'
 #' @param main_url url from formula1.com ending with '/qualifying.html'
 #' @param base_url The base url. Default 'https://www.formula1.com'.
@@ -28,6 +60,31 @@ find_qualifying_urls <- function(main_url, base_url = "https://www.formula1.com"
 }
 
 
+#' @title Get the url with qualification results from a year.
+#' @param year int. Year that you want to scrape.
+#' @return
+#' @export
+get_qualification_urls <- function(year) {
+
+  # First, get the main race results of a race year.
+  race_results_url <- get_race_results_url(year)
+
+  # Given the main race results page, from there we move
+  # to the qualification results. To do this, we find
+  # a url that contains the word 'qualifying' in it.
+  qualifying_main <- find_qualifying_urls(race_results_url)
+
+  if (length(qualifying_main) == 1){
+
+    # Thereafter, when we arrive at the qualification results,
+    # we again search for url's that have the word 'qualifying' into it.
+    qualifying_urls <- find_qualifying_urls(qualifying_main)
+  }
+  # These url's link to the qualifying results of each race.
+  return(qualifying_urls)
+}
+
+
 #' @title Extract the year from a url like 'https://www.formula1.com/en/results.html/2022/races/'
 #' @param driver_name Character.
 #' @return
@@ -46,7 +103,6 @@ get_capital_name <- function(driver_name){
 get_year_from_url <- function(url) {
   return(stringr::str_extract(url, "\\d{4}"))
 }
-
 
 
 #' @title Extract the circuit country from a url.
@@ -84,52 +140,3 @@ find_circuit_in_url <- function(url) {
 find_circuits_in_urls_vec <- function(urls) {
   return(unname(sapply(urls, find_circuit_in_url)))
 }
-
-#' Extract the table with qualifying stats from the website.
-#'
-#' @param url Character. URL from formula1.com that ends with
-#' qualifying.html'. It is used to scrape
-#'
-#' @return
-#' @export
-#' @importFrom magrittr %>%
-scrape_qualification <- function(url) {
-
-  data <- rvest::read_html(url) %>%
-    rvest::html_table()
-
-  if(length(data) != 0){
-
-    # Unlist the data and remove NA cols.
-    data <- data[[1]]
-    data <- data[, colSums(is.na(data)) < nrow(data)]
-    data$Circuit <- find_circuit_in_url(url)
-    data$Year <- get_year_from_url(url)
-
-  }
-
-  cat("Scraped the website:", url, "\n")
-  return(data)
-}
-
-
-#' @title Vectorised version to scrape multiple urls at once.
-#'
-#' @param qualifying_urls Character. URL's scraped with
-#' the fun `find_qualifying_urls()`
-#'
-#' @return
-#' @export
-#'
-#' @examples
-#' url <- 'https://www.formula1.com/en/results.html/2022/races/1114/great-britain/qualifying.html'
-#' quali_urls <- find_qualifying_urls(url)
-#' data <- scrape_qualifying_stats(quali_urls)
-scrape_qualifying_stats <- function(qualifying_urls) {
-
-  data <- lapply(qualifying_urls, scrape_qualification)
-  names(data) <- find_circuits_in_urls_vec(qualifying_urls)
-
-  return(data)
-}
-

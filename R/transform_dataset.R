@@ -16,7 +16,7 @@ str_to_seconds <- function(string){
 
   # Split the time in two parts, minutes and seconds.
   l <- stringr::str_split(string, ":")
-  l_num <- lapply(l, as.numeric)
+  l_num <- suppressWarnings(lapply(l, as.numeric))
 
   # Create empty container to store the results.
   time <- vector("double", length = length(l_num))
@@ -54,7 +54,10 @@ lap_improvement <- function(Q1, Q2){
 }
 
 
-# Remove all empty elements from a list.
+#' @title Remove all empty elements from a list.
+#' @param l List
+#' @return
+#' @export
 rem_empty_elements <- function(l){
 
   out <- l[lapply(l, length) > 0]
@@ -91,9 +94,9 @@ transf_data <- function(data){
     Q2_3 = lap_improvement(Q2, Q3),
 
     # Delta relative to quickest driver.
-    Q1_d = sec_to_delta(Q1),
-    Q2_d = sec_to_delta(Q2),
-    Q3_d = sec_to_delta(Q3)
+    Q1_int = sec_to_delta(Q1),
+    Q2_int = sec_to_delta(Q2),
+    Q3_int = sec_to_delta(Q3)
   )
 
   return(df)
